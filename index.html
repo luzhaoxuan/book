@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html ng-app="myModule">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+    <link rel="stylesheet" href="/node_modules/bootstrap/dist/css/bootstrap.css">
+</head>
+<body>
+<div class="navbar navbar-inverse">
+    <div class="container-fluid">
+        <div class="navbar-header">
+            <div class="navbar-brand">
+                <a href="#/">珠峰书店</a>
+            </div>
+        </div>
+        <div>
+            <ul class="nav navbar-nav">
+                <li><a href="#/">首页</a></li>
+                <li><a href="#/book/list">列表页</a></li>
+                <li><a href="#/book/add">增加</a></li>
+            </ul>
+        </div>
+    </div>
+</div>
+<div ng-view></div>
+<script src="/node_modules/angular/angular.js"></script>
+<script src="/node_modules/angular-resource/angular-resource.js"></script>
+<script src="/node_modules/angular-route/angular-route.js"></script>
+<script>
+    var app = angular.module('myModule', ['ngResource', 'ngRoute']);
+    app.factory('book', function ($resource) {
+        return $resource('/books/:id', null, {
+            update: {
+                method: 'PUT'
+            }
+        });
+    });
+    app.config(function ($routeProvider) {
+        $routeProvider.when('/', {
+            templateUrl: 'temp/index.html',//要给每个页面增加一个控制器，将对应的数据渲染到对应的页面上
+            controller: 'indexCtrl'
+        }).when('/book/list', {
+            templateUrl: 'temp/list.html',
+            controller: 'listCtrl'
+        }).when('/book/add', {
+            templateUrl: 'temp/add.html',
+            controller: 'addCtrl'
+        }).when('/book/detail/:id', {
+            templateUrl: 'temp/detail.html',
+            controller: 'detailCtrl'
+        }).otherwise('/');
+    });
+    app.controller('indexCtrl', ['$scope', function ($scope) {
+
+    }]);
+    app.controller('addCtrl', function ($scope, book, $location) {
+        $scope.add = function () {
+            book.save($scope.book).$promise.then(function (data) {
+                $location.path('/book/list')
+            })
+        }
+    });
+    app.controller('listCtrl', function ($scope, book, $location) {
+        book.query().$promise.then(function (data) {
+            console.log(data);
+            $scope.books = data;
+        })
+    });
+    app.controller('detailCtrl', function ($scope, book, $location, $routeParams) {
+        $scope.flag = true;
+        var id = $routeParams.id;
+        book.get({id: id}).$promise.then(function (data) {
+            $scope.book = data;
+        });
+        $scope.goBack = function () {
+            $location.path('/book/list')
+        };
+        $scope.remove = function () {
+            book.delete({id: id}).$promise.then(function (data) {
+                $location.path('/book/list');
+            });
+        };
+        $scope.update = function () {
+            $scope.flag = false;
+        };
+        $scope.sure = function () {
+            console.log($scope.book);
+            book.update({id:id},$scope.book).$promise.then(function (doc) {
+                $location.path('/book/list')
+            })
+        }
+    })
+</script>
+</body>
+</html>
